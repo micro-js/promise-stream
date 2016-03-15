@@ -1,0 +1,19 @@
+{
+  "name": "@f/promise-stream",
+  "description": "A stream of promises.",
+  "repository": "git://github.com/micro-js/promise-stream.git",
+  "version": "0.1.0",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "scripts": {
+    "postversion": "git push && git push --tags && npm publish --access=public"
+  },
+  "dependencies": {
+    "@f/foreach": "^1.2.2",
+    "@f/is-promise": "^1.1.1",
+    "@f/map-array": "^1.2.1"
+  },
+  "devDependencies": {
+    "tape": "^4.2.2"
+  }
+}
