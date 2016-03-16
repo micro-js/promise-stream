@@ -9,75 +9,100 @@ var test = require('tape')
  * Tests
  */
 
-test('should get set and get promise', function (t) {
-  var s = stream()
-  s(Promise.resolve(1))
-  s().then(function (last) {
-    t.equal(last, 1)
-    t.end()
-  })
-})
+ test('should get current last', function (t) {
+   t.plan(1)
+   var s = stream()
+   s(1)
+   t.equal(s(), 1)
+ })
 
-test('should get current last', function (t) {
-  var s = stream()
-  s(1)
-  t.equal(s.last(), 1)
-  t.end()
-})
+ test('should subscribe to changes', function (t) {
+   t.plan(2)
+   var s = stream()
+   var count = 0
+   s.subscribe(function (val) {
+     t.equal(val, ++count)
+   })
+   s(1)
+   setTimeout(function () {
+     s(2)
+   }, 50)
+ })
 
-test('should push promises to stream', function (t) {
-  t.plan(2)
+ test('should map', function (t) {
+   t.plan(2)
+   var s = stream()
+   var s2 = stream.map(function (val) {
+     return val + 1
+   }, s)
 
-  var s = stream()
-  s(1)
-  setTimeout(function () {
-    s(2)
-  }, 50)
-  t.equal(s.last(), 1)
-  setTimeout(function () {
-    t.equal(s.last(), 2)
-  }, 100)
-})
+   var count = 1
+   s2.subscribe(function (val) {
+     t.equal(val, ++count)
+   })
 
-test('should wait for ongoing calc', function (t) {
-  t.plan(2)
-  var s = stream()
-  s(delay(50, 1))
-  t.equal(s.last(), undefined)
-  s().then(function (last) {
-    t.equal(last, 1)
-  })
-})
+   s(1)
+   setTimeout(function () {
+     s(2)
+   }, 50)
+ })
 
-test('should subscribe to changes', function (t) {
-  t.plan(2)
-  var s = stream()
-  var count = 0
-  s.subscribe(function (val) {
-    t.equal(val, ++count)
-  })
-  s(delay(25, 1))
-  s(delay(50, 2))
-})
+ test('should combine streams', function (t) {
+   t.plan(3)
 
-test('should map', function (t) {
+   var in1 = stream(1)
+   var in2 = stream(1)
+   var add = stream.combine(function (arg1, arg2) {
+     return arg1 + arg2
+   }, [in1, in2])
+
+   t.equal(add(), 2)
+
+   in1(2)
+   t.equal(add(), 3)
+   in2(2)
+   t.equal(add(), 4)
+ })
+
+ test('should wait for promises', function (t) {
+   t.plan(1)
+   var s = stream()
+   s(Promise.resolve(1))
+   equal(t, s.wait(), 1)
+ })
+
+ test('should wait for ongoing calc', function (t) {
+   t.plan(1)
+   var s = stream()
+   s(delay(50, 1))
+   equal(t, s.wait(), 1)
+ })
+
+ test('should wait for ongoing calcs', function (t) {
+   t.plan(1)
+   var s = stream()
+   s(delay(50, 1))
+   s(delay(150, 2))
+   equal(t, s.wait(), 2)
+ })
+
+test('should map wait', function (t) {
   t.plan(2)
   var s = stream()
   var s2 = stream.map(function (val) {
     return val + 1
   }, s)
 
-  var count = 1
-  s2.subscribe(function (val) {
-    t.equal(val, ++count)
-  })
-
-  s(delay(25, 1))
-  s(delay(50, 2))
+  s(delay(50, 1))
+  equal(t, s2.wait(), 2)
+  setTimeout(function () {
+    s(delay(50, 2))
+    equal(t, s2.wait(), 3)
+  }, 100)
 })
 
-test('should combine streams', function (t) {
-  t.plan(3)
+test('should wait for combined streams', function (t) {
+  t.plan(2)
 
   var in1 = stream(1)
   var in2 = stream(1)
@@ -85,15 +110,18 @@ test('should combine streams', function (t) {
     return arg1 + arg2
   }, [in1, in2])
 
-  t.equal(add.last(), 2)
-  var count = 2
-  add.subscribe(function (val) {
-    t.equal(val, ++count)
-  })
+  t.equal(add(), 2)
 
-  in1(delay(25, 2))
-  in2(delay(50, 2))
+  in1(delay(50, 2))
+
+  equal(t, add.wait(), 3)
 })
+
+function equal(t, s, val) {
+  s.then(function (v) {
+    t.equal(v, val)
+  })
+}
 
 function delay (d, last) {
   return new Promise(function (resolve) {

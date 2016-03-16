@@ -6,9 +6,7 @@
 [![NPM version][npm-image]][npm-url]
 [![Code style][standard-image]][standard-url]
 
-A stream of promises. Good for representing a value that can be recomputed. API inspired by [flyd](//github.com/paldepind/flyd).
-
-Note: The most recent promise added to stream `s` is returned with `s()`. This can lead to strange behavior when multiple promises are added before they are resolved. 
+A stream interface for representing data flows with support for promises. Good for representing a value that can be recomputed. API inspired by [flyd](//github.com/paldepind/flyd).
 
 ## Installation
 
@@ -22,10 +20,10 @@ import stream from '@f/promise-stream'
 var s = stream(delay(10, 1))
 
 co(function * () {
-  yield s() // 1
-  yield s() // 1
+  yield stream.wait(s) // 1
+  yield stream.wait(s) // 1
   s(delay(10, 2))
-  yield s() // 2
+  yield stream.wait(s) // 2
 })
 
 var in1 = stream(1)
@@ -36,10 +34,10 @@ var add = stream.combine(function (arg1, arg2) {
 }, [in1, in2])
 
 co(function * () {
-  yield add() // 2
-  yield add() // 2
-  in1(dely(10, 2))
-  yield add() // 3
+  yield stream.wait(add) // 2
+  yield stream.wait(add) // 2
+  in1(delay(10, 2))
+  yield stream.wait(add) // 3
 })
 
 function delay (d, last) {
@@ -58,23 +56,29 @@ function delay (d, last) {
 
 - `initial` - initial value for stream
 
-**Returns:** function for pushing promises on to the stream or retreiving the most recent promise
+**Returns:** function for pushing vals on to the stream
+
+### stream.wait(s)
+
+- `s` - stream wait on
+
+**Returns:** Returns val of steam after all pending promises have been resolved.
 
 ### stream.on(fn, s)
 
-- `fn` - listen for resolved promises in stream `s`
+- `fn` - listen for updates to stream `s`
 - `s` - stream instance
 
 ### stream.map(fn, s)
 
-- `fn` - mapping function on resolved values in stream `s`
+- `fn` - mapping function on values in stream `s`
 - `s` - stream instance
 
 **Returns:** a new stream
 
 ### stream.combine(fn, deps)
 
-- `fn` - mapping function over resolved values in streams `deps`
+- `fn` - mapping function over values in streams `deps`
 - `deps` - streams that `fn` depends on
 
 **Returns:** a new stream
